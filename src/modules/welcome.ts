@@ -1,6 +1,6 @@
 import { AttachmentBuilder, type GuildMember, type PartialGuildMember } from 'discord.js';
 import { getConfig } from '../config/store.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 import { renderTemplate } from '../utils/template.js';
 import { renderWelcomeImage } from '../services/welcome-image.js';
 import { log } from '../core/logger.js';
@@ -22,13 +22,13 @@ export async function handleJoin(member: GuildMember): Promise<void> {
   if (config.enabled && config.channelId) {
     const channel = await member.guild.channels.fetch(config.channelId).catch(() => null);
     if (channel?.isTextBased() && 'send' in channel) {
-      const embed = buildEmbed({
+      const packet = buildEmbedPacket({
         ...config.embed,
         title: renderTemplate(config.embed.title, vars),
         description: renderTemplate(config.embed.description, vars)
       });
-
-      const files: AttachmentBuilder[] = [];
+      const embed = packet.embed;
+      const files: AttachmentBuilder[] = [...packet.files];
       if (config.dynamicImage.enabled) {
         try {
           const image = await renderWelcomeImage(member);
