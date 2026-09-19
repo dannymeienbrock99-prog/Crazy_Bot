@@ -269,6 +269,7 @@
           <label>Ping-Rolle<select data-path="tiktokLive.mentionRoleId" data-source="roles"></select></label>
           <label>Nachricht<textarea rows="3" data-path="tiktokLive.content"></textarea></label>
           <label>Prüfintervall nach Offline/Fehler (Sek.)<input type="number" min="30" data-path="tiktokLive.reconnectSeconds"></label>
+          <label>Link-Button Text<input data-path="tiktokLive.buttonLabel"></label>
           <label>Embed-Titel<input data-path="tiktokLive.embed.title"></label>
           <label>Embed-Beschreibung<textarea rows="3" data-path="tiktokLive.embed.description"></textarea></label>
           <button class="btn" data-action="tiktok-test">Test-Benachrichtigung senden</button>
@@ -356,26 +357,33 @@
     <section class="page" data-page-content="embeds">
       <div class="grid two">
         <article class="card">
-          <div class="card-title"><div><h3>Zentraler Embed-Stil</h3><p>Jedes Modul besitzt eigene Inhalte, nutzt aber dasselbe Grundsystem.</p></div></div>
-          <label class="switch-row"><span>Weißen Balken global sperren</span><input type="checkbox" data-path="branding.lockEmbedAccentWhite"></label>
-          <label>Fallback-Farbe<input type="color" data-path="branding.embedAccentColor"></label>
-          <div class="notice">Discord stellt die Embed-Farbe als vertikalen Balken links dar. Mit #FFFFFF bleibt der Balken wie im Kundenvorbild weiß.</div>
-          <ul class="checklist">
-            <li>Titel, Beschreibung, Autor und Footer frei</li>
-            <li>Großes Bild und Thumbnail aus Medienbibliothek</li>
-            <li>Buttons und Rollenaktionen je Modul</li>
-            <li>Nachrichteninhalt außerhalb des Embeds möglich</li>
-          </ul>
+          <div class="card-title"><div><h3>Zentraler Embed-Editor</h3><p>Alle Einbettungen mit demselben Editor bis ins Detail konfigurieren.</p></div></div>
+          <label>Einbettung auswählen<select id="embedTarget"></select></label>
+          <label class="switch-row"><span>Einbettung aktiv</span><input id="embedEnabled" type="checkbox"></label>
+          <label>Titel<input id="embedTitle" maxlength="256"></label>
+          <label>Beschreibung<textarea id="embedDescription" rows="8"></textarea></label>
+          <label>Autor<input id="embedAuthor" maxlength="256"></label>
+          <label>Footer<input id="embedFooter" maxlength="2048"></label>
+          <div class="field-row">
+            <label>Großes Bild<select id="embedImageAsset"></select></label>
+            <label>Thumbnail<select id="embedThumbnailAsset"></select></label>
+          </div>
+          <label>Individuelle Akzentfarbe<input id="embedColor" type="color"></label>
+          <label class="switch-row"><span>Weißen Balken global erzwingen</span><input type="checkbox" data-path="branding.lockEmbedAccentWhite"></label>
+          <div class="notice">Ist der globale Schalter aktiv, wird Discord für jede Einbettung #FFFFFF übergeben. Dadurch bleibt der linke Balken weiß.</div>
         </article>
         <article class="card">
+          <div class="card-title"><div><h3>Live-Vorschau</h3><p>Annäherung an die Darstellung in Discord.</p></div></div>
           <div class="discord-message-preview">
             <div class="avatar-mini">B</div>
             <div>
               <div><strong id="embedBotName">Kori</strong> <span class="app-tag">APP</span></div>
-              <div class="discord-embed">
-                <strong>Einbettungs-Vorschau</strong>
-                <p>Der Inhalt wird je Modul konfiguriert. Der weiße Balken ist Bestandteil des globalen Designs.</p>
-                <small>Footer kann frei festgelegt werden</small>
+              <div class="discord-embed" id="embedLivePreview">
+                <div id="embedPreviewAuthor" class="muted"></div>
+                <strong id="embedPreviewTitle">Einbettungs-Vorschau</strong>
+                <p id="embedPreviewDescription"></p>
+                <img id="embedPreviewImage" class="embed-preview-image hidden" alt="">
+                <small id="embedPreviewFooter"></small>
               </div>
             </div>
           </div>
