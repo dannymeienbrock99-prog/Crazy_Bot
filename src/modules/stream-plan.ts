@@ -22,7 +22,8 @@ export async function publishStreamPlan(guild: Guild): Promise<string> {
       ).join('\n\n')
     : 'Noch keine Streams eingetragen.';
 
-  const packet = buildEmbedPacket(config.embed);\n  const embed = packet.embed.setDescription(description);
+  const packet = buildEmbedPacket(config.embed);
+  const embed = packet.embed.setDescription(description);
   const old = config.messageId
     ? await channel.messages.fetch(config.messageId).catch(() => null)
     : null;
