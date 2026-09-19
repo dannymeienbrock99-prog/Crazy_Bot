@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -8,5 +8,8 @@
     <AssemblyName>Crazy_Bot</AssemblyName>
     <RootNamespace>CrazyBotLauncher</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.1.1.0</Version>
+    <FileVersion>0.1.1.0</FileVersion>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
   </PropertyGroup>
 </Project>
