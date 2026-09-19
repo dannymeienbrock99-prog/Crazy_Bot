@@ -1,7 +1,7 @@
 import { TikTokLiveConnection, WebcastEvent } from 'tiktok-live-connector';
-import type { Client } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type Client } from 'discord.js';
 import { getConfig } from '../config/store.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 import { renderTemplate } from '../utils/template.js';
 import { log } from '../core/logger.js';
 
@@ -33,15 +33,21 @@ async function notify(client: Client, roomId: string): Promise<void> {
   for (const guild of client.guilds.cache.values()) {
     const channel = await guild.channels.fetch(cfg.channelId).catch(() => null);
     if (!channel?.isTextBased() || !('send' in channel)) continue;
-    const embed = buildEmbed({
+    const packet = buildEmbedPacket({
       ...cfg.embed,
       title: renderTemplate(cfg.embed.title, values),
       description: renderTemplate(cfg.embed.description, values)
-    }).setURL(url);
+    });
+    packet.embed.setURL(url);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setLabel(cfg.buttonLabel).setStyle(ButtonStyle.Link).setURL(url)
+    );
 
     await channel.send({
       content: renderTemplate(cfg.content, values),
-      embeds: cfg.embed.enabled ? [embed] : []
+      embeds: cfg.embed.enabled ? [packet.embed] : [],
+      files: cfg.embed.enabled ? packet.files : [],
+      components: [row]
     });
   }
 }
