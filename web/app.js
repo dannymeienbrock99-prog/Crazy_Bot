@@ -12,7 +12,8 @@ const titles={
   hangman:['ʜᴀɴɢᴍᴀɴ','Konfigurierbares Discord-Game.'],
   embeds:['Einbettungen','Globales Discord-Embed-Design.'],
   media:['Medien','Bilder zentral hochladen und wiederverwenden.'],
-  backup:['Backup & Migration','Sicherung, Wiederherstellung und Umzug auf Windows Server.'],\n  diagnostics:['Diagnose & Logs','Status, Verbindung und Audit-Log.']
+  backup:['Backup & Migration','Sicherung, Wiederherstellung und Umzug auf Windows Server.'],
+  diagnostics:['Diagnose & Logs','Status, Verbindung und Audit-Log.']
 };
 
 function getPath(obj,path){return path.split('.').reduce((v,k)=>v?.[k],obj)}
@@ -452,7 +453,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     input.type=visible?'password':'text';
     button.textContent=visible?'Anzeigen':'Verbergen';
   };
-  document.querySelector('#setupDiscordToken').addEventListener('keydown',e=>{if(e.key==='Enter')saveDiscordSetup()});\n  document.querySelector('#embedTarget').onchange=()=>renderEmbedEditor();
+  document.querySelector('#setupDiscordToken').addEventListener('keydown',e=>{if(e.key==='Enter')saveDiscordSetup()});
+  document.querySelector('#embedTarget').onchange=()=>renderEmbedEditor();
   document.querySelector('#embedEnabled').onchange=e=>updateCurrentEmbed('enabled',e.target.checked);
   document.querySelector('#embedTitle').oninput=e=>updateCurrentEmbed('title',e.target.value);
   document.querySelector('#embedDescription').oninput=e=>updateCurrentEmbed('description',e.target.value);
@@ -461,6 +463,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelector('#embedColor').oninput=e=>updateCurrentEmbed('color',e.target.value);
   document.querySelector('#embedImageAsset').onchange=e=>updateCurrentEmbed('imageAssetId',e.target.value||null);
   document.querySelector('#embedThumbnailAsset').onchange=e=>updateCurrentEmbed('thumbnailAssetId',e.target.value||null);
-  document.querySelector('#exportBackup').onclick=exportBackup;\n  document.querySelector('#importBackup').onclick=importBackup;
+  document.querySelector('#exportBackup').onclick=exportBackup;
+  document.querySelector('#importBackup').onclick=importBackup;
   enableDragging();load();
 });
