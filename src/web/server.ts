@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import multer from 'multer';
-import type { Client, Guild } from 'discord.js';
-import { env } from '../env.js';
+import { OAuth2Scopes, PermissionFlagsBits, type Client, type Guild } from 'discord.js';
+import { env, envFilePath } from '../env.js';
 import { getConfig, saveConfig } from '../config/store.js';
 import { listAssets, saveAsset, getAssetAbsolutePath, getAsset } from '../assets/store.js';
 import { db, audit } from '../core/database.js';
@@ -66,13 +66,78 @@ export function startWebServer(client: Client | null): void {
 
   app.use('/api', auth);
 
+  app.post('/api/setup/discord', (req, res) => {
+    try {
+      const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+      if (token.length < 30 || token.includes('\n') || token.includes('\r')) {
+        throw new Error('Der Discord Bot Token ist ungültig oder unvollständig.');
+      }
+
+      fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+
+      const lines = fs.existsSync(envFilePath)
+        ? fs.readFileSync(envFilePath, 'utf8').split(/\r?\n/)
+        : [];
+
+      const values = new Map<string, string>();
+      for (const line of lines) {
+        const index = line.indexOf('=');
+        if (index <= 0 || line.trim().startsWith('#')) continue;
+        values.set(line.slice(0, index).trim(), line.slice(index + 1));
+      }
+
+      values.set('DISCORD_TOKEN', token);
+      values.set('DASHBOARD_HOST', values.get('DASHBOARD_HOST') || '127.0.0.1');
+      values.set('DASHBOARD_PORT', values.get('DASHBOARD_PORT') || '3210');
+      values.set('DATA_DIR', values.get('DATA_DIR') || './data');
+      values.set('LOG_LEVEL', values.get('LOG_LEVEL') || 'info');
+
+      const output = [
+        '# Crazy Bot - lokale Konfiguration',
+        '# Diese Datei niemals in GitHub hochladen.',
+        ...Array.from(values.entries()).map(([key, value]) => `${key}=${value}`),
+        ''
+      ].join('\n');
+
+      fs.writeFileSync(envFilePath, output, 'utf8');
+      res.json({ ok: true, restarting: true });
+
+      setTimeout(() => process.exit(42), 500);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   app.get('/api/status', (_req, res) => {
     const cfg = getConfig();
+    let inviteUrl: string | null = null;
+    if (client?.isReady()) {
+      try {
+        inviteUrl = client.generateInvite({
+          scopes: [OAuth2Scopes.Bot, OAuth2Scopes.ApplicationsCommands],
+          permissions: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.ManageRoles,
+            PermissionFlagsBits.ManageChannels,
+            PermissionFlagsBits.MentionEveryone
+          ]
+        });
+      } catch {
+        inviteUrl = null;
+      }
+    }
+
     res.json({
       ok: true,
+      discordConfigured: Boolean(env.discordToken),
       discord: client?.isReady() ?? false,
       botUser: client?.user?.tag ?? null,
       guilds: client?.guilds.cache.size ?? 0,
+      inviteUrl,
       dashboard: { host: env.dashboardHost, port: env.dashboardPort },
       modules: {
         welcome: cfg.welcome.enabled,
