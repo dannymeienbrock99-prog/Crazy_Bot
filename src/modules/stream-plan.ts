@@ -1,5 +1,5 @@
 import type { Guild } from 'discord.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 import { getConfig, updateConfig } from '../config/store.js';
 
 const order = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
@@ -22,11 +22,11 @@ export async function publishStreamPlan(guild: Guild): Promise<string> {
       ).join('\n\n')
     : 'Noch keine Streams eingetragen.';
 
-  const embed = buildEmbed(config.embed).setDescription(description);
+  const packet = buildEmbedPacket(config.embed);\n  const embed = packet.embed.setDescription(description);
   const old = config.messageId
     ? await channel.messages.fetch(config.messageId).catch(() => null)
     : null;
-  const message = old ? await old.edit({ embeds: [embed] }) : await channel.send({ embeds: [embed] });
+  const message = old ? await old.edit({ embeds: [embed], files: packet.files }) : await channel.send({ embeds: [embed], files: packet.files });
 
   updateConfig((next) => {
     next.streamPlan.messageId = message.id;
