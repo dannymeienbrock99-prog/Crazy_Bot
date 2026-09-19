@@ -4,7 +4,9 @@
   "private": true,
   "description": "Konfigurierbarer Discord-Bot mit deutschem Web-Dashboard für Windows und Windows Server.",
   "type": "module",
-  "engines": { "node": ">=24.0.0" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/src/index.js",
@@ -12,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start:local": "powershell -ExecutionPolicy Bypass -File ./scripts/start-local.ps1",
     "service:install": "powershell -ExecutionPolicy Bypass -File ./scripts/install-service.ps1",
-    "service:remove": "powershell -ExecutionPolicy Bypass -File ./scripts/uninstall-service.ps1"
+    "service:remove": "powershell -ExecutionPolicy Bypass -File ./scripts/uninstall-service.ps1",
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
