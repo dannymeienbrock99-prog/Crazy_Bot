@@ -45,18 +45,24 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
 
 async function registerCommands(client: Client): Promise<void> {
   if (!client.application) return;
-  if (env.discordGuildId) {
-    await client.application.commands.set(commands, env.discordGuildId);
-    log.info('Slash Commands als Guild-Commands registriert.', { guildId: env.discordGuildId });
-  } else {
-    await client.application.commands.set(commands);
-    log.info('Slash Commands global registriert.');
+
+  const detectedGuildId =
+    env.discordGuildId ||
+    (client.guilds.cache.size === 1 ? client.guilds.cache.first()?.id ?? '' : '');
+
+  if (detectedGuildId) {
+    await client.application.commands.set(commands, detectedGuildId);
+    log.info('Slash Commands als Guild-Commands registriert.', { guildId: detectedGuildId });
+    return;
   }
+
+  await client.application.commands.set(commands);
+  log.info('Slash Commands global registriert.');
 }
 
 export async function startDiscordBot(): Promise<Client | null> {
-  if (!env.discordToken || !env.discordClientId) {
-    log.warn('Discord ist nicht konfiguriert. Dashboard startet im Offline-Konfigurationsmodus.');
+  if (!env.discordToken) {
+    log.warn('Discord ist noch nicht eingerichtet. Dashboard startet mit grafischer Ersteinrichtung.');
     return null;
   }
 
@@ -111,8 +117,16 @@ export async function startDiscordBot(): Promise<Client | null> {
   });
 
   client.on(Events.Error, (error) => log.error('Discord Client Fehler.', String(error)));
-  await client.login(env.discordToken);
-  return client;
+
+  try {
+    await client.login(env.discordToken);
+    return client;
+  } catch (error) {
+    log.error('Discord-Anmeldung fehlgeschlagen. Dashboard bleibt zur Reparatur erreichbar.', String(error));
+    client.destroy();
+    discordClient = null;
+    return null;
+  }
 }
 
 export async function stopDiscordBot(): Promise<void> {
