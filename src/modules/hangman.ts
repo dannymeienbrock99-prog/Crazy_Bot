@@ -100,7 +100,8 @@ export async function handleHangmanCommand(interaction: ChatInputCommandInteract
         status=excluded.status, updated_at=excluded.updated_at
     `).run(row);
 
-    const packet = gamePacket(row);\n    await interaction.reply({ embeds: [packet.embed], files: packet.files });
+    const packet = gamePacket(row);
+    await interaction.reply({ embeds: [packet.embed], files: packet.files });
     return;
   }
 
@@ -177,6 +178,7 @@ export async function handleHangmanMessage(message: Message): Promise<void> {
   } else if (lost) {
     await message.reply(`💀 Verloren. Das Wort war **${row.word.toUpperCase()}**.`);
   } else {
-    const packet = gamePacket(next);\n    await message.reply({ embeds: [packet.embed], files: packet.files });
+    const packet = gamePacket(next);
+    await message.reply({ embeds: [packet.embed], files: packet.files });
   }
 }
