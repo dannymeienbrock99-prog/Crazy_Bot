@@ -3,7 +3,6 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder,
   PermissionFlagsBits,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
@@ -11,7 +10,7 @@ import {
 } from 'discord.js';
 import { db } from '../core/database.js';
 import { getConfig } from '../config/store.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 
 function hasAnyRole(interaction: ChatInputCommandInteraction | ButtonInteraction, roleIds: string[]): boolean {
   if (!roleIds.length) return false;
@@ -43,15 +42,15 @@ function voteLists(stampId: string): { yes: string[]; maybe: string[]; no: strin
   return result;
 }
 
-function stampEmbed(stamp: {
+function stampPacket(stamp: {
   id: string;
   title: string;
   start_at: string;
   description: string;
-}): EmbedBuilder {
-  const base = buildEmbed(getConfig().modStamp.embed);
+}) {
+  const packet = buildEmbedPacket(getConfig().modStamp.embed);
   const votes = voteLists(stamp.id);
-  return base
+  packet.embed
     .setTitle(`🛡️ ${stamp.title}`)
     .setDescription(stamp.description || 'Bitte Teilnahme auswählen.')
     .addFields(
@@ -60,6 +59,7 @@ function stampEmbed(stamp: {
       { name: `❓ Unsicher (${votes.maybe.length})`, value: votes.maybe.join('\n') || '—', inline: true },
       { name: `❌ Nicht dabei (${votes.no.length})`, value: votes.no.join('\n') || '—', inline: true }
     );
+  return packet;
 }
 
 export async function createModStamp(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -87,7 +87,8 @@ export async function createModStamp(interaction: ChatInputCommandInteraction): 
   `).run(id, interaction.guild.id, interaction.channel.id, title, startAt, description, interaction.user.id, new Date().toISOString());
 
   const stamp = { id, title, start_at: startAt, description };
-  const message = await interaction.channel.send({ embeds: [stampEmbed(stamp)], components: [buttons(id)] });
+  const packet = stampPacket(stamp);
+  const message = await interaction.channel.send({ embeds: [packet.embed], files: packet.files, components: [buttons(id)] });
   db.prepare('UPDATE mod_stamps SET message_id = ? WHERE id = ?').run(message.id, id);
 
   await interaction.reply({ content: 'Mod-Stempel wurde erstellt.', ephemeral: true });
@@ -119,6 +120,7 @@ export async function handleModStampButton(interaction: ButtonInteraction): Prom
     DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at
   `).run(id, interaction.user.id, response, new Date().toISOString());
 
-  await interaction.update({ embeds: [stampEmbed(stamp)], components: [buttons(id)] });
+  const packet = stampPacket(stamp);
+  await interaction.update({ embeds: [packet.embed], files: packet.files, components: [buttons(id)] });
   return true;
 }
