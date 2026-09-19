@@ -1,4 +1,4 @@
-const state={config:null,status:null,context:{channels:[],roles:[]},dirty:false,accessKey:localStorage.getItem('crazyBotAccessKey')||''};
+const state={config:null,status:null,context:{channels:[],roles:[]},assets:[],dirty:false,accessKey:localStorage.getItem('crazyBotAccessKey')||''};
 const titles={
   overview:['Übersicht','Alle wichtigen Bereiche auf einen Blick.'],
   branding:['Bot & Branding','Name, Bilder und globale Darstellung.'],
@@ -158,12 +158,15 @@ function renderRolePanels(){
     card.innerHTML=`<div class="panel-head"><strong>Rollenpanel ${pi+1}</strong><button class="danger-link">Panel löschen</button></div>
       <div class="field-row"><label>Name<input data-f="name"></label><label>Kanal<span data-slot="channel"></span></label></div>
       <label>Titel<input data-f="title"></label><label>Beschreibung<textarea rows="2" data-f="description"></textarea></label>
-      <div class="entries"></div><button class="mini-btn add-entry">+ Rolle</button> <button class="mini-btn publish">Panel veröffentlichen</button>`;
-    card.querySelector('[data-f="name"]').value=panel.name;card.querySelector('[data-f="title"]').value=panel.title;card.querySelector('[data-f="description"]').value=panel.description;
+      <div class="entries"></div><button class="mini-btn add-entry">+ Rolle</button> <button class="mini-btn edit-embed">Im Embed-Editor öffnen</button> <button class="mini-btn publish">Panel veröffentlichen</button>`;
+    card.querySelector('[data-f="name"]').value=panel.name;card.querySelector('[data-f="title"]').value=panel.embed.title;card.querySelector('[data-f="description"]').value=panel.embed.description;
     const cs=channelSelect(panel.channelId);card.querySelector('[data-slot="channel"]').replaceWith(cs);cs.addEventListener('change',()=>{panel.channelId=cs.value;markDirty()});
-    ['name','title','description'].forEach(f=>card.querySelector('[data-f="'+f+'"]').addEventListener('input',e=>{panel[f]=e.target.value;markDirty()}));
+    card.querySelector('[data-f="name"]').addEventListener('input',e=>{panel.name=e.target.value;markDirty();renderEmbedEditor()});
+    card.querySelector('[data-f="title"]').addEventListener('input',e=>{panel.embed.title=e.target.value;markDirty();renderEmbedEditor()});
+    card.querySelector('[data-f="description"]').addEventListener('input',e=>{panel.embed.description=e.target.value;markDirty();renderEmbedEditor()});
     card.querySelector('.danger-link').onclick=()=>{state.config.roles.panels.splice(pi,1);renderRolePanels();markDirty()};
     card.querySelector('.add-entry').onclick=()=>{panel.entries.push({roleId:'',label:'Neue Rolle',emoji:'',style:'secondary'});renderRolePanels();markDirty()};
+    card.querySelector('.edit-embed').onclick=()=>{showPage('embeds');renderEmbedEditor('roles.panels.'+pi+'.embed')};
     card.querySelector('.publish').onclick=()=>action('roles-publish',panel.id);
     const entries=card.querySelector('.entries');
     panel.entries.forEach((entry,ei)=>{
@@ -211,9 +214,67 @@ async function uploadFile(input){
 }
 
 async function renderMedia(){
-  const assets=await api('/api/assets');const root=document.querySelector('#mediaGrid');root.innerHTML='';
+  const assets=await api('/api/assets');state.assets=assets;renderEmbedEditor();const root=document.querySelector('#mediaGrid');root.innerHTML='';
   if(!assets.length){root.innerHTML='<p class="muted">Noch keine Bilder hochgeladen.</p>';return}
   assets.forEach(a=>{const x=document.createElement('div');x.className='media-item';x.innerHTML=`<img src="/media/${a.id}" alt=""><div><strong></strong><small></small></div>`;x.querySelector('strong').textContent=a.name;x.querySelector('small').textContent=a.kind;root.append(x)});
+}
+
+
+function embedTargets(){
+  const base=[
+    ['welcome.embed','Willkommen'],
+    ['rules.embed','Regeln'],
+    ['tiktokLive.embed','TikTok Live'],
+    ['modStamp.embed','Mod-Stempel'],
+    ['streamPlan.embed','Streamplan'],
+    ['hangman.embed','Hangman']
+  ];
+  state.config.roles.panels.forEach((panel,i)=>base.push(['roles.panels.'+i+'.embed','Rollenpanel: '+panel.name]));
+  return base;
+}
+function currentEmbed(){
+  const target=document.querySelector('#embedTarget')?.value||'welcome.embed';
+  return getPath(state.config,target);
+}
+function renderAssetOptions(select,current){
+  if(!select)return;
+  select.innerHTML='';
+  select.append(option('','— kein Bild —',!current));
+  for(const a of state.assets)select.append(option(a.id,a.name,a.id===current));
+}
+function renderEmbedEditor(forcePath){
+  if(!state.config)return;
+  const target=document.querySelector('#embedTarget');
+  if(!target)return;
+  const previous=forcePath||target.value||'welcome.embed';
+  target.innerHTML='';
+  for(const [path,label] of embedTargets())target.append(option(path,label,path===previous));
+  if(!target.value)target.value=target.options[0]?.value||'welcome.embed';
+  const embed=currentEmbed();
+  if(!embed)return;
+  document.querySelector('#embedEnabled').checked=embed.enabled!==false;
+  document.querySelector('#embedTitle').value=embed.title||'';
+  document.querySelector('#embedDescription').value=embed.description||'';
+  document.querySelector('#embedAuthor').value=embed.author||'';
+  document.querySelector('#embedFooter').value=embed.footer||'';
+  document.querySelector('#embedColor').value=embed.color||'#FFFFFF';
+  renderAssetOptions(document.querySelector('#embedImageAsset'),embed.imageAssetId);
+  renderAssetOptions(document.querySelector('#embedThumbnailAsset'),embed.thumbnailAssetId);
+  const preview=document.querySelector('#embedLivePreview');
+  preview.style.borderLeftColor=state.config.branding.lockEmbedAccentWhite?'#ffffff':(embed.color||'#ffffff');
+  document.querySelector('#embedPreviewAuthor').textContent=embed.author||'';
+  document.querySelector('#embedPreviewTitle').textContent=embed.title||'';
+  document.querySelector('#embedPreviewDescription').textContent=embed.description||'';
+  document.querySelector('#embedPreviewFooter').textContent=embed.footer||'';
+  const image=document.querySelector('#embedPreviewImage');
+  if(embed.imageAssetId){image.src='/media/'+embed.imageAssetId;image.classList.remove('hidden')}else{image.removeAttribute('src');image.classList.add('hidden')}
+}
+function updateCurrentEmbed(field,value){
+  const embed=currentEmbed();
+  if(!embed)return;
+  embed[field]=value;
+  markDirty();
+  renderEmbedEditor();
 }
 
 async function exportBackup(){
@@ -261,7 +322,7 @@ async function save(){
   try{syncStateFromInputs();state.config=await api('/api/config',{method:'PUT',body:JSON.stringify(state.config)});clearDirty();toast('Konfiguration gespeichert.');renderAll()}catch(e){toast(e.message,'bad');throw e}
 }
 
-function renderAll(){bindInputs();updateOverview();updatePreviews();renderRolePanels();renderStreamEntries();renderStats()}
+function renderAll(){bindInputs();updateOverview();updatePreviews();renderRolePanels();renderStreamEntries();renderStats();renderEmbedEditor()}
 async function load(){
   try{
     [state.config,state.status,state.context]=await Promise.all([api('/api/config'),api('/api/status'),api('/api/discord/context')]);
@@ -277,8 +338,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.body.addEventListener('input',e=>{if(e.target.matches('[data-path],#hangmanWords')){if(state.config){setPath(state.config,e.target.dataset.path||'hangman.words',e.target.id==='hangmanWords'?state.config.hangman.words:readInput(e.target));markDirty();updatePreviews()}}});
   document.body.addEventListener('change',e=>{if(e.target.matches('[data-path]')){setPath(state.config,e.target.dataset.path,readInput(e.target));markDirty();updatePreviews()}if(e.target.matches('[data-upload-kind]'))uploadFile(e.target)});
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
-  document.querySelector('#addRolePanel').onclick=()=>{state.config.roles.panels.push({id:crypto.randomUUID(),name:'Neues Rollenpanel',channelId:'',messageId:'',title:'Rollen auswählen',description:'Wähle deine Rollen aus.',entries:[]});renderRolePanels();markDirty()};
+  document.querySelector('#addRolePanel').onclick=()=>{state.config.roles.panels.push({id:crypto.randomUUID(),name:'Neues Rollenpanel',channelId:'',messageId:'',embed:{enabled:true,title:'Rollen auswählen',description:'Wähle deine Rollen aus.',author:'',footer:'',imageAssetId:null,thumbnailAssetId:null,color:'#FFFFFF'},entries:[]});renderRolePanels();renderEmbedEditor();markDirty()};
   document.querySelector('#addStreamEntry').onclick=()=>{state.config.streamPlan.entries.push({id:crypto.randomUUID(),day:'Montag',time:'20:00',title:'Stream',platform:'TikTok',note:''});renderStreamEntries();markDirty()};
-  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};\n  document.querySelector('#exportBackup').onclick=exportBackup;\n  document.querySelector('#importBackup').onclick=importBackup;
+  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};\n  document.querySelector('#embedTarget').onchange=()=>renderEmbedEditor();
+  document.querySelector('#embedEnabled').onchange=e=>updateCurrentEmbed('enabled',e.target.checked);
+  document.querySelector('#embedTitle').oninput=e=>updateCurrentEmbed('title',e.target.value);
+  document.querySelector('#embedDescription').oninput=e=>updateCurrentEmbed('description',e.target.value);
+  document.querySelector('#embedAuthor').oninput=e=>updateCurrentEmbed('author',e.target.value);
+  document.querySelector('#embedFooter').oninput=e=>updateCurrentEmbed('footer',e.target.value);
+  document.querySelector('#embedColor').oninput=e=>updateCurrentEmbed('color',e.target.value);
+  document.querySelector('#embedImageAsset').onchange=e=>updateCurrentEmbed('imageAssetId',e.target.value||null);
+  document.querySelector('#embedThumbnailAsset').onchange=e=>updateCurrentEmbed('thumbnailAssetId',e.target.value||null);
+  document.querySelector('#exportBackup').onclick=exportBackup;\n  document.querySelector('#importBackup').onclick=importBackup;
   enableDragging();load();
 });
