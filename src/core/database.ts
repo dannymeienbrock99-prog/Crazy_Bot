@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS mod_stamp_votes (
   FOREIGN KEY (stamp_id) REFERENCES mod_stamps(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS mod_stamp_reminders (
+  stamp_id TEXT NOT NULL,
+  minutes INTEGER NOT NULL,
+  sent_at TEXT NOT NULL,
+  PRIMARY KEY (stamp_id, minutes),
+  FOREIGN KEY (stamp_id) REFERENCES mod_stamps(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS hangman_games (
   guild_id TEXT PRIMARY KEY,
   channel_id TEXT NOT NULL,

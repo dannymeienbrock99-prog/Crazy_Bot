@@ -30,7 +30,7 @@
       <button class="nav-item" data-page="hangman">🎮 <span>ʜᴀɴɢᴍᴀɴ</span></button>
       <button class="nav-item" data-page="embeds">▣ <span>Einbettungen</span></button>
       <button class="nav-item" data-page="media">🖼 <span>Medien</span></button>
-      <button class="nav-item" data-page="diagnostics">◉ <span>Diagnose & Logs</span></button>
+      <button class="nav-item" data-page="backup">💾 <span>Backup & Migration</span></button>\n      <button class="nav-item" data-page="diagnostics">◉ <span>Diagnose & Logs</span></button>
     </nav>
 
     <div class="sidebar-footer">
@@ -390,6 +390,24 @@
           <label class="btn upload-inline">+ Bild hochladen<input id="generalUpload" type="file" accept="image/*"></label>
         </div>
         <div id="mediaGrid" class="media-grid"></div>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="backup">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Backup exportieren</h3><p>Konfiguration, Medien und laufende Modul-Daten als eine .koribackup-Datei.</p></div></div>
+          <label class="switch-row"><span>Automatische Backups</span><input type="checkbox" data-path="backup.automaticEnabled"></label>
+          <label>Intervall in Stunden<input type="number" min="1" max="168" data-path="backup.intervalHours"></label>
+          <label>Anzahl aufzubewahrender Backups<input type="number" min="1" max="90" data-path="backup.keepFiles"></label>
+          <button class="btn primary" id="exportBackup">Backup herunterladen</button>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Migration / Wiederherstellung</h3><p>Den getesteten Stand vom Windows-PC später auf den Windows Server übernehmen.</p></div></div>
+          <div class="notice">Beim Import werden Konfiguration, Medien und persistente Modul-Daten durch den Inhalt des Backups ersetzt.</div>
+          <label class="upload">.koribackup auswählen<input id="importBackupFile" type="file" accept=".koribackup,application/octet-stream"></label>
+          <button class="btn" id="importBackup">Backup importieren</button>
+        </article>
       </div>
     </section>
 

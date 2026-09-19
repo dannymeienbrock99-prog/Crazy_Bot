@@ -235,6 +235,12 @@ const hangmanSchema = withDefaults(z.object({
   }))
 }));
 
+const backupSchema = withDefaults(z.object({
+  automaticEnabled: z.boolean().default(true),
+  intervalHours: z.number().int().min(1).max(168).default(24),
+  keepFiles: z.number().int().min(1).max(90).default(14)
+}));
+
 export const appConfigSchema = z.object({
   version: z.literal(1).default(1),
   general: generalSchema,
@@ -246,7 +252,8 @@ export const appConfigSchema = z.object({
   modStamp: modStampSchema,
   streamPlan: streamPlanSchema,
   serverStats: serverStatsSchema,
-  hangman: hangmanSchema
+  hangman: hangmanSchema,
+  backup: backupSchema
 });
 
 export type AppConfig = z.infer<typeof appConfigSchema>;

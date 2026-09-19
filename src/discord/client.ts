@@ -15,6 +15,7 @@ import { handleHangmanCommand, handleHangmanMessage } from '../modules/hangman.j
 import { startServerStats, stopServerStats } from '../modules/server-stats.js';
 import { startTikTokLive, stopTikTokLive } from '../services/tiktok-live.js';
 import { getConfig } from '../config/store.js';
+import { startModStampReminders, stopModStampReminders } from '../services/mod-stamp-reminders.js';
 
 export let discordClient: Client | null = null;
 
@@ -75,6 +76,7 @@ export async function startDiscordBot(): Promise<Client | null> {
     await registerCommands(ready);
     startServerStats(ready);
     startTikTokLive(ready);
+    startModStampReminders(ready);
   });
 
   client.on(Events.GuildMemberAdd, async (member) => {
@@ -115,6 +117,7 @@ export async function startDiscordBot(): Promise<Client | null> {
 
 export async function stopDiscordBot(): Promise<void> {
   stopServerStats();
+  stopModStampReminders();
   await stopTikTokLive();
   discordClient?.destroy();
   discordClient = null;

@@ -13,6 +13,7 @@ import { publishRules } from '../modules/rules.js';
 import { publishRolePanel } from '../modules/roles.js';
 import { publishStreamPlan } from '../modules/stream-plan.js';
 import { buildEmbed } from '../discord/embed.js';
+import { createBackupBuffer, restoreBackupBuffer } from '../services/backup.js';
 
 function safeEqual(a: string, b: string): boolean {
   const aa = Buffer.from(a);
@@ -44,6 +45,10 @@ export function startWebServer(client: Client | null): void {
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 15 * 1024 * 1024, files: 1 }
+  });
+  const backupUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 150 * 1024 * 1024, files: 1 }
   });
 
   app.disable('x-powered-by');
@@ -209,6 +214,29 @@ export function startWebServer(client: Client | null): void {
         content: '🔴 Test der TikTok-Live-Benachrichtigung',
         embeds: cfg.embed.enabled ? [buildEmbed(cfg.embed).setDescription('So sieht die Live-Benachrichtigung aus.')] : []
       });
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.get('/api/backup/export', (_req, res) => {
+    try {
+      const data = createBackupBuffer();
+      const stamp = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="Crazy_Bot_${stamp}.koribackup"`);
+      res.send(data);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.post('/api/backup/import', backupUpload.single('file'), (req, res) => {
+    try {
+      if (!req.file) throw new Error('Keine Backup-Datei empfangen.');
+      restoreBackupBuffer(req.file.buffer);
+      audit('dashboard', 'backup.import', { name: req.file.originalname, bytes: req.file.size });
       res.json({ ok: true });
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : String(error) });

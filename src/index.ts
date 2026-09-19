@@ -3,14 +3,17 @@ import { log } from './core/logger.js';
 import './core/database.js';
 import { startDiscordBot, stopDiscordBot } from './discord/client.js';
 import { startWebServer } from './web/server.js';
+import { startBackupScheduler, stopBackupScheduler } from './services/backup-scheduler.js';
 
 validateRuntimeSecurity();
 
 const client = await startDiscordBot();
 startWebServer(client);
+startBackupScheduler();
 
 async function shutdown(signal: string): Promise<void> {
   log.info('Shutdown angefordert.', { signal });
+  stopBackupScheduler();
   await stopDiscordBot();
   process.exit(0);
 }

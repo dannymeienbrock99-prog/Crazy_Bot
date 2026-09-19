@@ -12,7 +12,7 @@ const titles={
   hangman:['ʜᴀɴɢᴍᴀɴ','Konfigurierbares Discord-Game.'],
   embeds:['Einbettungen','Globales Discord-Embed-Design.'],
   media:['Medien','Bilder zentral hochladen und wiederverwenden.'],
-  diagnostics:['Diagnose & Logs','Status, Verbindung und Audit-Log.']
+  backup:['Backup & Migration','Sicherung, Wiederherstellung und Umzug auf Windows Server.'],\n  diagnostics:['Diagnose & Logs','Status, Verbindung und Audit-Log.']
 };
 
 function getPath(obj,path){return path.split('.').reduce((v,k)=>v?.[k],obj)}
@@ -216,6 +216,29 @@ async function renderMedia(){
   assets.forEach(a=>{const x=document.createElement('div');x.className='media-item';x.innerHTML=`<img src="/media/${a.id}" alt=""><div><strong></strong><small></small></div>`;x.querySelector('strong').textContent=a.name;x.querySelector('small').textContent=a.kind;root.append(x)});
 }
 
+async function exportBackup(){
+  try{
+    const res=await fetch('/api/backup/export',{headers:authHeaders()});
+    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data.error||('HTTP '+res.status))}
+    const blob=await res.blob();
+    const disposition=res.headers.get('content-disposition')||'';
+    const match=/filename="([^"]+)"/.exec(disposition);
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=match?.[1]||'Crazy_Bot.koribackup';a.click();URL.revokeObjectURL(a.href);
+    toast('Backup wurde erstellt.');
+  }catch(e){toast(e.message,'bad')}
+}
+
+async function importBackup(){
+  const input=document.querySelector('#importBackupFile');const file=input.files?.[0];
+  if(!file){toast('Bitte zuerst eine .koribackup-Datei auswählen.','bad');return}
+  if(!confirm('Backup wirklich importieren? Die aktuelle Konfiguration wird ersetzt.'))return;
+  try{
+    const fd=new FormData();fd.append('file',file);
+    await api('/api/backup/import',{method:'POST',body:fd});
+    toast('Backup erfolgreich importiert.');input.value='';await load();
+  }catch(e){toast(e.message,'bad')}
+}
+
 async function renderAudit(){
   const rows=await api('/api/audit');const root=document.querySelector('#auditLog');root.innerHTML='';
   rows.forEach(r=>{const x=document.createElement('div');x.className='audit-item';x.innerHTML=`<strong></strong><small></small>`;x.querySelector('strong').textContent=r.action;x.querySelector('small').textContent=new Date(r.created_at).toLocaleString('de-DE')+' · '+r.actor;root.append(x)});
@@ -256,6 +279,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
   document.querySelector('#addRolePanel').onclick=()=>{state.config.roles.panels.push({id:crypto.randomUUID(),name:'Neues Rollenpanel',channelId:'',messageId:'',title:'Rollen auswählen',description:'Wähle deine Rollen aus.',entries:[]});renderRolePanels();markDirty()};
   document.querySelector('#addStreamEntry').onclick=()=>{state.config.streamPlan.entries.push({id:crypto.randomUUID(),day:'Montag',time:'20:00',title:'Stream',platform:'TikTok',note:''});renderStreamEntries();markDirty()};
-  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};
+  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};\n  document.querySelector('#exportBackup').onclick=exportBackup;\n  document.querySelector('#importBackup').onclick=importBackup;
   enableDragging();load();
 });
