@@ -1,0 +1,67 @@
+name: Windows Installer
+
+on:
+  push:
+    branches:
+      - "feature/kori-v1"
+    paths:
+      - "installer/**"
+      - "src/**"
+      - "web/**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/build-installer.yml"
+  workflow_dispatch:
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install, test and build
+        shell: pwsh
+        run: |
+          npm install
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Prepare portable application
+        shell: pwsh
+        run: |
+          npm prune --omit=dev
+          New-Item -ItemType Directory -Force -Path installer\package\runtime | Out-Null
+          New-Item -ItemType Directory -Force -Path installer\package\dist | Out-Null
+          New-Item -ItemType Directory -Force -Path installer\package\web | Out-Null
+          Copy-Item (Get-Command node).Source installer\package\runtime\node.exe
+          Copy-Item dist\* installer\package\dist -Recurse -Force
+          Copy-Item web\* installer\package\web -Recurse -Force
+          Copy-Item node_modules installer\package\node_modules -Recurse -Force
+          Copy-Item package.json installer\package\package.json
+          Copy-Item .env.example installer\package\.env.example
+          Copy-Item installer\Configure-Crazy-Bot.ps1 installer\package\Configure-Crazy-Bot.ps1
+          Copy-Item installer\Start-Crazy-Bot.cmd installer\package\Start-Crazy-Bot.cmd
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build Setup EXE
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" }
+          & $iscc installer\Crazy_Bot.iss
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crazy_Bot_Windows_Setup
+          path: installer/output/Crazy_Bot_Setup_0.1.0.exe
+          if-no-files-found: error
+          retention-days: 30
