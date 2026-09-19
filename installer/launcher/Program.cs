@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Net.Http;
 using System.Windows.Forms;
 
 namespace CrazyBotLauncher;
@@ -7,6 +8,7 @@ namespace CrazyBotLauncher;
 internal sealed class TrayContext : ApplicationContext
 {
     private readonly NotifyIcon _tray;
+    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(2) };
     private Process? _bot;
     private bool _closing;
     private bool _suppressRestart;
@@ -30,7 +32,7 @@ internal sealed class TrayContext : ApplicationContext
 
         _tray = new NotifyIcon
         {
-            Text = "Crazy Bot",
+            Text = "Crazy Bot Testversion",
             Icon = SystemIcons.Application,
             Visible = true,
             ContextMenuStrip = menu
@@ -40,7 +42,7 @@ internal sealed class TrayContext : ApplicationContext
         StartBot();
 
         _tray.BalloonTipTitle = "Crazy Bot";
-        _tray.BalloonTipText = "Crazy Bot läuft. Das Dashboard wird geöffnet.";
+        _tray.BalloonTipText = "Crazy Bot wird gestartet. Das Dashboard öffnet sich automatisch.";
         _tray.ShowBalloonTip(2500);
     }
 
@@ -54,7 +56,7 @@ internal sealed class TrayContext : ApplicationContext
         if (!File.Exists(node) || !File.Exists(entry))
         {
             MessageBox.Show(
-                "Crazy Bot konnte nicht gestartet werden, weil Programmdateien fehlen. Bitte den Installer erneut ausführen.",
+                "Crazy Bot konnte nicht gestartet werden, weil Programmdateien fehlen. Bitte die Testversion erneut installieren.",
                 "Crazy Bot",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error
@@ -79,8 +81,10 @@ internal sealed class TrayContext : ApplicationContext
         {
             if (_closing || _suppressRestart) return;
 
-            var delay = _bot?.ExitCode == 42 ? 500 : 3000;
-            await Task.Delay(delay);
+            int exitCode = -1;
+            try { exitCode = _bot?.ExitCode ?? -1; } catch { }
+
+            await Task.Delay(exitCode == 42 ? 500 : 3000);
 
             if (!_closing && !_suppressRestart)
                 StartBot();
@@ -105,11 +109,33 @@ internal sealed class TrayContext : ApplicationContext
         if (!_browserOpened)
         {
             _browserOpened = true;
-            _ = Task.Run(async () =>
+            _ = Task.Run(OpenDashboardWhenReadyAsync);
+        }
+    }
+
+    private async Task OpenDashboardWhenReadyAsync()
+    {
+        for (var i = 0; i < 60 && !_closing; i++)
+        {
+            try
             {
-                await Task.Delay(1600);
-                OpenDashboard();
-            });
+                using var response = await _http.GetAsync("http://127.0.0.1:3210/api/status");
+                if (response.IsSuccessStatusCode)
+                {
+                    OpenDashboard();
+                    return;
+                }
+            }
+            catch { }
+
+            await Task.Delay(500);
+        }
+
+        if (!_closing)
+        {
+            _tray.BalloonTipTitle = "Crazy Bot";
+            _tray.BalloonTipText = "Das Dashboard konnte nicht automatisch erreicht werden. Rechtsklick auf das Tray-Symbol für weitere Optionen.";
+            _tray.ShowBalloonTip(5000);
         }
     }
 
@@ -162,6 +188,7 @@ internal sealed class TrayContext : ApplicationContext
         catch { }
 
         _bot?.Dispose();
+        _http.Dispose();
         _tray.Visible = false;
         _tray.Dispose();
         ExitThread();
