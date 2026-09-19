@@ -66,11 +66,18 @@ export function startWebServer(client: Client | null): void {
 
   app.use('/api', auth);
 
-  app.post('/api/setup/discord', (req, res) => {
+  app.post('/api/setup/discord', async (req, res) => {
     try {
       const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
       if (token.length < 30 || token.includes('\n') || token.includes('\r')) {
         throw new Error('Der Discord Bot Token ist ungültig oder unvollständig.');
+      }
+
+      const verify = await fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bot ${token}` }
+      });
+      if (!verify.ok) {
+        throw new Error('Discord hat diesen Bot Token nicht akzeptiert. Bitte den Token im Developer Portal erneut kopieren.');
       }
 
       fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
