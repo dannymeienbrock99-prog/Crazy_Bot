@@ -1,11 +1,29 @@
-import 'dotenv/config';
+import fs from 'node:fs';
 import path from 'node:path';
+import dotenv from 'dotenv';
+
+export const configRoot = path.resolve(
+  process.env.CRAZY_BOT_CONFIG_DIR?.trim() || process.cwd()
+);
+export const envFilePath = path.join(configRoot, '.env');
+
+if (fs.existsSync(envFilePath)) {
+  dotenv.config({ path: envFilePath });
+}
 
 function readNumber(name: string, fallback: number): number {
   const value = process.env[name];
   if (!value) return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function resolveDataDir(): string {
+  const configured = process.env.DATA_DIR?.trim();
+  if (!configured) return path.join(configRoot, 'data');
+  return path.isAbsolute(configured)
+    ? configured
+    : path.resolve(configRoot, configured);
 }
 
 export const env = {
@@ -15,7 +33,7 @@ export const env = {
   dashboardHost: process.env.DASHBOARD_HOST?.trim() || '127.0.0.1',
   dashboardPort: readNumber('DASHBOARD_PORT', 3210),
   dashboardAccessKey: process.env.DASHBOARD_ACCESS_KEY?.trim() ?? '',
-  dataDir: path.resolve(process.env.DATA_DIR?.trim() || './data'),
+  dataDir: resolveDataDir(),
   logLevel: process.env.LOG_LEVEL?.trim() || 'info'
 };
 
