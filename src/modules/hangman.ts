@@ -111,7 +111,8 @@ export async function handleHangmanCommand(interaction: ChatInputCommandInteract
       await interaction.reply({ content: 'Aktuell läuft kein Hangman-Spiel.', ephemeral: true });
       return;
     }
-    const packet = gamePacket(row);\n    await interaction.reply({ embeds: [packet.embed], files: packet.files, ephemeral: true });
+    const packet = gamePacket(row);
+    await interaction.reply({ embeds: [packet.embed], files: packet.files, ephemeral: true });
     return;
   }
 
