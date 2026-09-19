@@ -85,6 +85,15 @@ export async function startDiscordBot(): Promise<Client | null> {
     startModStampReminders(ready);
   });
 
+  client.on(Events.GuildCreate, async (guild) => {
+    try {
+      await client.application?.commands.set(commands, guild.id);
+      log.info('Slash Commands für neu hinzugefügten Server registriert.', { guildId: guild.id });
+    } catch (error) {
+      log.warn('Slash Commands konnten für den neuen Server nicht registriert werden.', String(error));
+    }
+  });
+
   client.on(Events.GuildMemberAdd, async (member) => {
     await handleAutoRoles(member);
     await handleJoin(member);
