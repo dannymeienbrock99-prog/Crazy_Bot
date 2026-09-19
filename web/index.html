@@ -7,6 +7,34 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<div id="setupOverlay" class="setup-overlay hidden">
+  <div class="setup-card">
+    <div class="setup-logo">CB</div>
+    <span class="eyebrow">ERSTEINRICHTUNG</span>
+    <h1>Crazy Bot mit Discord verbinden</h1>
+    <p>Der Bot ist vollständig installiert. Für die Verbindung mit Discord fehlt nur noch der geheime Bot-Token deines Discord-Bots.</p>
+
+    <div class="setup-steps">
+      <div><b>1</b><span>Öffne das Discord Developer Portal und wähle deinen Bot.</span></div>
+      <div><b>2</b><span>Unter <strong>Bot</strong> den Token kopieren. Aktiviere dort auch <strong>Server Members Intent</strong> und <strong>Message Content Intent</strong>.</span></div>
+      <div><b>3</b><span>Token hier lokal einfügen. Er wird nur auf diesem Windows-PC gespeichert.</span></div>
+    </div>
+
+    <a class="btn ghost setup-link" href="https://discord.com/developers/applications" target="_blank" rel="noreferrer">Discord Developer Portal öffnen</a>
+
+    <label class="setup-token-label">Discord Bot Token
+      <div class="password-row">
+        <input id="setupDiscordToken" type="password" autocomplete="off" spellcheck="false" placeholder="Bot-Token hier einfügen">
+        <button class="btn ghost" id="toggleSetupToken" type="button">Anzeigen</button>
+      </div>
+    </label>
+
+    <div id="setupMessage" class="setup-message"></div>
+    <button class="btn primary setup-primary" id="saveDiscordSetup" type="button">Verbinden und Crazy Bot starten</button>
+    <p class="setup-footnote">Der Token wird nicht in GitHub, Backups oder die Kundenpräsentation geschrieben.</p>
+  </div>
+</div>
+
 <div id="app">
   <aside class="sidebar">
     <div class="brand">
@@ -66,6 +94,18 @@
           <strong id="guildCount">0 Server</strong>
         </div>
       </div>
+
+      <article id="discordSetupCard" class="card discord-setup-card hidden">
+        <div>
+          <span class="eyebrow">DISCORD VERBINDUNG</span>
+          <h3 id="discordSetupTitle">Discord fertig einrichten</h3>
+          <p id="discordSetupText">Crazy Bot ist verbunden, aber noch keinem Discord-Server hinzugefügt.</p>
+        </div>
+        <div class="discord-setup-actions">
+          <a id="inviteBotButton" class="btn primary hidden" target="_blank" rel="noreferrer">Bot zu Discord hinzufügen</a>
+          <button id="repairDiscordButton" class="btn ghost" type="button">Discord-Verbindung ändern</button>
+        </div>
+      </article>
 
       <div class="metrics">
         <article class="metric card"><span>Willkommen</span><strong id="mWelcome">AUS</strong></article>
