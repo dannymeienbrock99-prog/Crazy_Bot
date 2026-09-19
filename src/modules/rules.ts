@@ -5,7 +5,7 @@ import {
   type ButtonInteraction,
   type Guild
 } from 'discord.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 import { getConfig, updateConfig } from '../config/store.js';
 
 export async function publishRules(guild: Guild): Promise<string> {
@@ -25,9 +25,11 @@ export async function publishRules(guild: Guild): Promise<string> {
     rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(button));
   }
 
+  const packet = buildEmbedPacket(config.embed);
   const payload = {
     content: config.content,
-    embeds: config.embed.enabled ? [buildEmbed(config.embed)] : [],
+    embeds: config.embed.enabled ? [packet.embed] : [],
+    files: config.embed.enabled ? packet.files : [],
     components: rows
   };
 
