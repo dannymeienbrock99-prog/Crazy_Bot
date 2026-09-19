@@ -42,3 +42,7 @@ Discord-Tokens und andere Secrets niemals committen. Das Dashboard bindet standa
 ## Windows Server
 
 Die produktive Installation ist als Windows-Dienst vorgesehen. Die PowerShell-Service-Skripte werden im Projekt mitgeführt und im weiteren Ausbau in einen Installer eingebunden.
+
+## Windows Anleitung
+
+Siehe [docs/WINDOWS_SETUP.md](docs/WINDOWS_SETUP.md) fuer lokalen Test, Discord-Rechte, Windows-Dienst und Migration.
