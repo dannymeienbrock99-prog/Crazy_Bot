@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type OverlayOptions } from 'sharp';
 import type { GuildMember } from 'discord.js';
 import { getConfig } from '../config/store.js';
 import { getAssetAbsolutePath } from '../assets/store.js';
@@ -26,13 +26,11 @@ export async function renderWelcomeImage(member: GuildMember): Promise<Buffer> {
   const height = config.height;
   const backgroundPath = getAssetAbsolutePath(config.backgroundAssetId);
 
-  let base = backgroundPath
+  const base = backgroundPath
     ? sharp(backgroundPath).resize(width, height, { fit: 'cover' })
-    : sharp({
-        create: { width, height, channels: 4, background: '#202225' }
-      });
+    : sharp({ create: { width, height, channels: 4, background: '#202225' } });
 
-  const composites: sharp.OverlayOptions[] = [];
+  const composites: OverlayOptions[] = [];
 
   if (config.avatar.enabled) {
     const size = Math.min(config.avatar.size, width, height);

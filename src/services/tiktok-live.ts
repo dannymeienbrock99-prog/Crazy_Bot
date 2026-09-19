@@ -56,12 +56,15 @@ async function connect(client: Client): Promise<void> {
       connection = null;
     }
 
-    connection = new TikTokLiveConnection(cfg.uniqueId);
-    connection.on(WebcastEvent.STREAM_END, () => {
+    connection = new TikTokLiveConnection(cfg.uniqueId, {});
+    const emitter = connection as unknown as {
+      on(event: string, listener: (...args: any[]) => void): void;
+    };
+    emitter.on(WebcastEvent.STREAM_END, () => {
       announcedRoomId = '';
       schedule(client);
     });
-    connection.on('disconnected', () => schedule(client));
+    emitter.on('disconnected', () => schedule(client));
 
     const state = await connection.connect();
     await notify(client, String(state.roomId));

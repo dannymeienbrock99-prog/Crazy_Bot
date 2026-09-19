@@ -6,7 +6,8 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   type ButtonInteraction,
-  type ChatInputCommandInteraction
+  type ChatInputCommandInteraction,
+  type GuildMember
 } from 'discord.js';
 import { db } from '../core/database.js';
 import { getConfig } from '../config/store.js';
@@ -14,9 +15,8 @@ import { buildEmbed } from '../discord/embed.js';
 
 function hasAnyRole(interaction: ChatInputCommandInteraction | ButtonInteraction, roleIds: string[]): boolean {
   if (!roleIds.length) return false;
-  const roles = interaction.member && 'roles' in interaction.member ? interaction.member.roles : null;
-  const cache = roles && typeof roles !== 'string[]' && 'cache' in roles ? roles.cache : null;
-  return roleIds.some((roleId) => cache?.has(roleId));
+  const member = interaction.member as GuildMember | null;
+  return roleIds.some((roleId) => member?.roles.cache.has(roleId));
 }
 
 function buttons(id: string) {
@@ -63,7 +63,7 @@ function stampEmbed(stamp: {
 }
 
 export async function createModStamp(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.guild || !interaction.channel || !interaction.channel.isTextBased()) return;
+  if (!interaction.guild || !interaction.channel || !('send' in interaction.channel)) return;
   const cfg = getConfig().modStamp;
   const allowed =
     hasAnyRole(interaction, cfg.allowedRoleIds) ||
