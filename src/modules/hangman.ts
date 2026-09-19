@@ -5,7 +5,7 @@ import {
 } from 'discord.js';
 import { db } from '../core/database.js';
 import { getConfig } from '../config/store.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 
 type GameRow = {
   guild_id: string;
@@ -36,16 +36,18 @@ function renderWord(word: string, guessed: string[]): string {
     .join(' ');
 }
 
-function gameEmbed(row: GameRow) {
+function gamePacket(row: GameRow) {
   const guessed = JSON.parse(row.guessed) as string[];
   const wrong = JSON.parse(row.wrong) as string[];
   const cfg = getConfig().hangman;
-  return buildEmbed(cfg.embed)
+  const packet = buildEmbedPacket(cfg.embed);
+  packet.embed
     .setDescription(`**Kategorie:** ${row.category}\n\n${renderWord(row.word, guessed)}`)
     .addFields(
       { name: 'Falsche Buchstaben', value: wrong.join(', ').toUpperCase() || '—', inline: false },
       { name: 'Versuche', value: `${wrong.length} / ${cfg.maxWrong}`, inline: true }
     );
+  return packet;
 }
 
 export async function handleHangmanCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -98,7 +100,7 @@ export async function handleHangmanCommand(interaction: ChatInputCommandInteract
         status=excluded.status, updated_at=excluded.updated_at
     `).run(row);
 
-    await interaction.reply({ embeds: [gameEmbed(row)] });
+    const packet = gamePacket(row);\n    await interaction.reply({ embeds: [packet.embed], files: packet.files });
     return;
   }
 
@@ -108,7 +110,7 @@ export async function handleHangmanCommand(interaction: ChatInputCommandInteract
       await interaction.reply({ content: 'Aktuell läuft kein Hangman-Spiel.', ephemeral: true });
       return;
     }
-    await interaction.reply({ embeds: [gameEmbed(row)], ephemeral: true });
+    const packet = gamePacket(row);\n    await interaction.reply({ embeds: [packet.embed], files: packet.files, ephemeral: true });
     return;
   }
 
@@ -175,6 +177,6 @@ export async function handleHangmanMessage(message: Message): Promise<void> {
   } else if (lost) {
     await message.reply(`💀 Verloren. Das Wort war **${row.word.toUpperCase()}**.`);
   } else {
-    await message.reply({ embeds: [gameEmbed(next)] });
+    const packet = gamePacket(next);\n    await message.reply({ embeds: [packet.embed], files: packet.files });
   }
 }
