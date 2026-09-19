@@ -7,7 +7,7 @@ import {
   type GuildMember
 } from 'discord.js';
 import { getConfig, updateConfig } from '../config/store.js';
-import { buildEmbed } from '../discord/embed.js';
+import { buildEmbedPacket } from '../discord/message.js';
 
 const buttonStyle = {
   primary: ButtonStyle.Primary,
@@ -37,16 +37,8 @@ export async function publishRolePanel(guild: Guild, panelId: string): Promise<s
   const channel = await guild.channels.fetch(panel.channelId);
   if (!channel?.isTextBased() || !('send' in channel)) throw new Error('Ungültiger Rollen-Kanal.');
 
-  const embed = buildEmbed({
-    enabled: true,
-    title: panel.title,
-    description: panel.description,
-    author: '',
-    footer: '',
-    imageAssetId: null,
-    thumbnailAssetId: null,
-    color: '#FFFFFF'
-  });
+  const packet = buildEmbedPacket(panel.embed);
+  const embed = packet.embed;
 
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
   for (let i = 0; i < panel.entries.length; i += 5) {
@@ -66,7 +58,7 @@ export async function publishRolePanel(guild: Guild, panelId: string): Promise<s
     ? await channel.messages.fetch(panel.messageId).catch(() => null)
     : null;
 
-  const payload = { embeds: [embed], components: rows };
+  const payload = { embeds: [embed], files: packet.files, components: rows };
   const result = message ? await message.edit(payload) : await channel.send(payload);
 
   updateConfig((next) => {
