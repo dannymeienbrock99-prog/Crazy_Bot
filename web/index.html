@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crazy Bot Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="setupOverlay" class="setup-overlay hidden">
+  <div class="setup-card">
+    <div class="setup-logo">CB</div>
+    <span class="eyebrow">ERSTEINRICHTUNG</span>
+    <h1>Crazy Bot mit Discord verbinden</h1>
+    <p>Der Bot ist vollständig installiert. Für die Verbindung mit Discord fehlt nur noch der geheime Bot-Token deines Discord-Bots.</p>
+
+    <div class="setup-steps">
+      <div><b>1</b><span>Öffne das Discord Developer Portal und wähle deinen Bot.</span></div>
+      <div><b>2</b><span>Unter <strong>Bot</strong> den Token kopieren. Aktiviere dort auch <strong>Server Members Intent</strong> und <strong>Message Content Intent</strong>.</span></div>
+      <div><b>3</b><span>Token hier lokal einfügen. Er wird nur auf diesem Windows-PC gespeichert.</span></div>
+    </div>
+
+    <a class="btn ghost setup-link" href="https://discord.com/developers/applications" target="_blank" rel="noreferrer">Discord Developer Portal öffnen</a>
+
+    <label class="setup-token-label">Discord Bot Token
+      <div class="password-row">
+        <input id="setupDiscordToken" type="password" autocomplete="off" spellcheck="false" placeholder="Bot-Token hier einfügen">
+        <button class="btn ghost" id="toggleSetupToken" type="button">Anzeigen</button>
+      </div>
+    </label>
+
+    <div id="setupMessage" class="setup-message"></div>
+    <button class="btn primary setup-primary" id="saveDiscordSetup" type="button">Verbinden und Crazy Bot starten</button>
+    <p class="setup-footnote">Der Token wird nicht in GitHub, Backups oder die Kundenpräsentation geschrieben.</p>
+  </div>
+</div>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo" id="brandLogo">K</div>
+      <div>
+        <strong id="brandTitle">Kori</strong>
+        <small>Discord Bot Control</small>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item active" data-page="overview">⌂ <span>Übersicht</span></button>
+      <button class="nav-item" data-page="branding">✦ <span>Bot & Branding</span></button>
+      <button class="nav-item" data-page="welcome">👋 <span>Willkommen</span></button>
+      <button class="nav-item" data-page="roles">👥 <span>Rollen</span></button>
+      <button class="nav-item" data-page="rules">📜 <span>Regeln</span></button>
+      <button class="nav-item" data-page="tiktok">🔴 <span>TikTok Live</span></button>
+      <button class="nav-item" data-page="modstamp">🛡 <span>Mod-Stempel</span></button>
+      <button class="nav-item" data-page="streamplan">📅 <span>Streamplan</span></button>
+      <button class="nav-item" data-page="stats">📊 <span>Server Stats</span></button>
+      <button class="nav-item" data-page="hangman">🎮 <span>ʜᴀɴɢᴍᴀɴ</span></button>
+      <button class="nav-item" data-page="embeds">▣ <span>Einbettungen</span></button>
+      <button class="nav-item" data-page="media">🖼 <span>Medien</span></button>
+      <button class="nav-item" data-page="backup">💾 <span>Backup & Migration</span></button>
+      <button class="nav-item" data-page="diagnostics">◉ <span>Diagnose & Logs</span></button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-line"><span id="sideStatusDot" class="dot"></span><span id="sideStatus">Lade Status…</span></div>
+      <small>Konfiguration lokal gespeichert</small>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Übersicht</h1>
+        <p id="pageSubtitle">Alle wichtigen Bereiche auf einen Blick.</p>
+      </div>
+      <div class="top-actions">
+        <span id="dirtyBadge" class="badge hidden">Ungespeicherte Änderungen</span>
+        <button class="btn ghost" id="reloadBtn">Neu laden</button>
+        <button class="btn primary" id="saveBtn">Änderungen speichern</button>
+      </div>
+    </header>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <section class="page active" data-page-content="overview">
+      <div class="hero card">
+        <div>
+          <span class="eyebrow">BOT-ZENTRALE</span>
+          <h2 id="overviewBotName">Kori</h2>
+          <p>Discord-Bot, Dashboard und Module werden zentral konfiguriert. Der interne Projektname ist unabhängig vom sichtbaren Botnamen.</p>
+        </div>
+        <div class="hero-status">
+          <span id="discordStatusBadge" class="pill">Discord wird geprüft…</span>
+          <strong id="guildCount">0 Server</strong>
+        </div>
+      </div>
+
+      <article id="discordSetupCard" class="card discord-setup-card hidden">
+        <div>
+          <span class="eyebrow">DISCORD VERBINDUNG</span>
+          <h3 id="discordSetupTitle">Discord fertig einrichten</h3>
+          <p id="discordSetupText">Crazy Bot ist verbunden, aber noch keinem Discord-Server hinzugefügt.</p>
+        </div>
+        <div class="discord-setup-actions">
+          <a id="inviteBotButton" class="btn primary hidden" target="_blank" rel="noreferrer">Bot zu Discord hinzufügen</a>
+          <button id="repairDiscordButton" class="btn ghost" type="button">Discord-Verbindung ändern</button>
+        </div>
+      </article>
+
+      <div class="metrics">
+        <article class="metric card"><span>Willkommen</span><strong id="mWelcome">AUS</strong></article>
+        <article class="metric card"><span>Regeln</span><strong id="mRules">AUS</strong></article>
+        <article class="metric card"><span>TikTok Live</span><strong id="mTikTok">AUS</strong></article>
+        <article class="metric card"><span>Hangman</span><strong id="mHangman">AUS</strong></article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Schnellaktionen</h3><p>Häufige Verwaltungsaktionen.</p></div></div>
+          <div class="action-grid">
+            <button class="quick" data-go="welcome">Welcome bearbeiten</button>
+            <button class="quick" data-action="rules-publish">Regeln veröffentlichen</button>
+            <button class="quick" data-action="stream-publish">Streamplan aktualisieren</button>
+            <button class="quick" data-action="identity-sync">Bot-Identität synchronisieren</button>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Grundprinzip</h3><p>Nichts ist fest im Kundenlayout verdrahtet.</p></div></div>
+          <ul class="checklist">
+            <li>Botname und Server-Nickname frei wählbar</li>
+            <li>Profilbild, Logo, Welcome-Hintergrund und Modulbilder austauschbar</li>
+            <li>Discord-Kanäle und Rollen aus Dropdowns auswählen</li>
+            <li>Einbettungen standardmäßig mit weißem linken Akzentbalken</li>
+            <li>Lokaler Windows-Test und später Windows-Server-Dienst</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="branding">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Bot-Identität</h3><p>Sichtbare Namen unabhängig vom Projektnamen.</p></div></div>
+          <label>Globaler Bot-Anzeigename<input data-path="branding.botDisplayName" maxlength="32"></label>
+          <label>Server-Nickname<input data-path="branding.serverNickname" maxlength="32"></label>
+          <label>Dashboard-Titel<input data-path="branding.dashboardTitle" maxlength="80"></label>
+          <div class="upload-row">
+            <label class="upload">Bot-Profilbild<input type="file" accept="image/*" data-upload-kind="bot-avatar" data-upload-path="branding.avatarAssetId"></label>
+            <label class="upload">Dashboard-Logo<input type="file" accept="image/*" data-upload-kind="dashboard-logo" data-upload-path="branding.dashboardLogoAssetId"></label>
+            <label class="upload">Favicon<input type="file" accept="image/*" data-upload-kind="favicon" data-upload-path="branding.faviconAssetId"></label>
+          </div>
+          <button class="btn" data-action="identity-sync">Mit Discord synchronisieren</button>
+        </article>
+
+        <article class="card">
+          <div class="card-title"><div><h3>Einbettungs-Design</h3><p>Der gewünschte weiße Balken bleibt zentral erhalten.</p></div></div>
+          <label class="switch-row"><span>Weißen linken Embed-Balken erzwingen</span><input type="checkbox" data-path="branding.lockEmbedAccentWhite"></label>
+          <label>Fallback-Akzentfarbe<input type="color" data-path="branding.embedAccentColor"></label>
+          <div class="discord-preview">
+            <div class="discord-embed" id="globalEmbedPreview">
+              <strong>Vorschau Einbettung</strong>
+              <p>Jede Bot-Einbettung kann individuell aufgebaut werden. Der linke Balken bleibt standardmäßig weiß.</p>
+              <small>Crazy Bot • Vorschau</small>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="welcome">
+      <div class="grid two welcome-layout">
+        <article class="card">
+          <div class="card-title"><div><h3>Willkommen</h3><p>Nachricht, Log und Bild komplett frei einstellen.</p></div></div>
+          <label class="switch-row"><span>Welcome aktiv</span><input type="checkbox" data-path="welcome.enabled"></label>
+          <label>Welcome-Kanal<select data-path="welcome.channelId" data-source="text-channels"></select></label>
+          <label>Nachrichteninhalt<textarea rows="3" data-path="welcome.content"></textarea></label>
+
+          <h4>Welcome-Einbettung</h4>
+          <label class="switch-row"><span>Embed aktiv</span><input type="checkbox" data-path="welcome.embed.enabled"></label>
+          <label>Titel<input data-path="welcome.embed.title"></label>
+          <label>Beschreibung<textarea rows="3" data-path="welcome.embed.description"></textarea></label>
+          <label>Footer<input data-path="welcome.embed.footer"></label>
+
+          <h4>Welcome-Log</h4>
+          <label>Log-Kanal<select data-path="welcome.log.channelId" data-source="text-channels"></select></label>
+          <label class="switch-row"><span>Join protokollieren</span><input type="checkbox" data-path="welcome.log.joinEnabled"></label>
+          <label>Join-Text<input data-path="welcome.log.joinText"></label>
+          <label class="switch-row"><span>Leave protokollieren</span><input type="checkbox" data-path="welcome.log.leaveEnabled"></label>
+          <label>Leave-Text<input data-path="welcome.log.leaveText"></label>
+        </article>
+
+        <article class="card">
+          <div class="card-title"><div><h3>Dynamisches Welcome-Bild</h3><p>Breite und Höhe sind frei einstellbar. Elemente können in der Vorschau verschoben werden.</p></div></div>
+          <label class="switch-row"><span>Dynamisches Bild aktiv</span><input type="checkbox" data-path="welcome.dynamicImage.enabled"></label>
+          <div class="field-row">
+            <label>Breite (px)<input type="number" min="320" max="4096" data-path="welcome.dynamicImage.width"></label>
+            <label>Höhe (px)<input type="number" min="180" max="4096" data-path="welcome.dynamicImage.height"></label>
+          </div>
+          <label class="upload">Hintergrundbild<input type="file" accept="image/*" data-upload-kind="welcome-background" data-upload-path="welcome.dynamicImage.backgroundAssetId"></label>
+
+          <div id="welcomeCanvas" class="welcome-canvas">
+            <div class="welcome-layer avatar-layer" data-layer="avatar">CB</div>
+            <div class="welcome-layer text-layer username-layer" data-layer="username">Crazy_Batto</div>
+            <div class="welcome-layer text-layer member-layer" data-layer="member">Mitglied #1337</div>
+          </div>
+
+          <details open>
+            <summary>Avatar-Ebene</summary>
+            <div class="field-row three">
+              <label>X<input type="number" data-path="welcome.dynamicImage.avatar.x"></label>
+              <label>Y<input type="number" data-path="welcome.dynamicImage.avatar.y"></label>
+              <label>Größe<input type="number" data-path="welcome.dynamicImage.avatar.size"></label>
+            </div>
+            <label class="switch-row"><span>Rund</span><input type="checkbox" data-path="welcome.dynamicImage.avatar.circle"></label>
+          </details>
+
+          <details>
+            <summary>Benutzername</summary>
+            <label>Textvorlage<input data-path="welcome.dynamicImage.usernameText.template"></label>
+            <div class="field-row three">
+              <label>X<input type="number" data-path="welcome.dynamicImage.usernameText.x"></label>
+              <label>Y<input type="number" data-path="welcome.dynamicImage.usernameText.y"></label>
+              <label>Schriftgröße<input type="number" data-path="welcome.dynamicImage.usernameText.fontSize"></label>
+            </div>
+            <label>Textfarbe<input type="color" data-path="welcome.dynamicImage.usernameText.color"></label>
+          </details>
+
+          <details>
+            <summary>Mitgliederzahl</summary>
+            <label>Textvorlage<input data-path="welcome.dynamicImage.memberText.template"></label>
+            <div class="field-row three">
+              <label>X<input type="number" data-path="welcome.dynamicImage.memberText.x"></label>
+              <label>Y<input type="number" data-path="welcome.dynamicImage.memberText.y"></label>
+              <label>Schriftgröße<input type="number" data-path="welcome.dynamicImage.memberText.fontSize"></label>
+            </div>
+            <label>Textfarbe<input type="color" data-path="welcome.dynamicImage.memberText.color"></label>
+          </details>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="roles">
+      <div class="card">
+        <div class="card-title"><div><h3>Automatische Rollen</h3><p>Neue Mitglieder erhalten ausgewählte Rollen automatisch.</p></div></div>
+        <label>Auto-Rollen<select multiple size="6" data-path="roles.autoRoleIds" data-source="roles"></select></label>
+        <div class="field-row">
+          <label>Verzögerung (ms)<input type="number" data-path="roles.delayMs"></label>
+          <label class="switch-row"><span>Bots ausschließen</span><input type="checkbox" data-path="roles.ignoreBots"></label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <div><h3>Selbst zuweisbare Rollen</h3><p>Button-Rollen nach dem Sapphire-Prinzip, frei konfigurierbar.</p></div>
+          <button class="btn" id="addRolePanel">+ Rollenpanel</button>
+        </div>
+        <div id="rolePanels"></div>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="rules">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Regeln</h3><p>Eine Nachricht veröffentlichen und später immer dieselbe aktualisieren.</p></div></div>
+          <label class="switch-row"><span>Regel-Modul aktiv</span><input type="checkbox" data-path="rules.enabled"></label>
+          <label>Regel-Kanal<select data-path="rules.channelId" data-source="text-channels"></select></label>
+          <label>Text außerhalb der Einbettung<textarea rows="3" data-path="rules.content"></textarea></label>
+          <label>Titel<input data-path="rules.embed.title"></label>
+          <label>Regeltext<textarea rows="12" data-path="rules.embed.description"></textarea></label>
+          <label>Footer<input data-path="rules.embed.footer"></label>
+
+          <h4>Regeln bestätigen</h4>
+          <label class="switch-row"><span>Bestätigungsbutton</span><input type="checkbox" data-path="rules.acceptance.enabled"></label>
+          <label>Rolle nach Bestätigung<select data-path="rules.acceptance.roleId" data-source="roles"></select></label>
+          <label>Button-Text<input data-path="rules.acceptance.buttonLabel"></label>
+          <label>Button-Emoji<input data-path="rules.acceptance.buttonEmoji"></label>
+
+          <button class="btn primary" data-action="rules-publish">Regeln veröffentlichen / aktualisieren</button>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Discord-Vorschau</h3><p>Der weiße linke Balken wird durch #FFFFFF erzeugt.</p></div></div>
+          <div class="discord-message-preview">
+            <div class="avatar-mini">R</div>
+            <div>
+              <div><strong>Regeln</strong> <span class="app-tag">APP</span></div>
+              <div class="discord-embed" id="rulesPreview">
+                <strong id="rulesPreviewTitle">SERVER-REGELN</strong>
+                <p id="rulesPreviewText">Die Regeln gelten für alle auf diesem Server.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="tiktok">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>TikTok Live</h3><p>Automatisch benachrichtigen, sobald der konfigurierte Account LIVE ist.</p></div></div>
+          <label class="switch-row"><span>Live-Watcher aktiv</span><input type="checkbox" data-path="tiktokLive.enabled"></label>
+          <label>TikTok Benutzername<input placeholder="@username" data-path="tiktokLive.uniqueId"></label>
+          <label>Benachrichtigungs-Kanal<select data-path="tiktokLive.channelId" data-source="text-channels"></select></label>
+          <label>Ping
+            <select data-path="tiktokLive.mentionMode">
+              <option value="everyone">@everyone</option>
+              <option value="role">bestimmte Rolle</option>
+              <option value="none">kein Ping</option>
+            </select>
+          </label>
+          <label>Ping-Rolle<select data-path="tiktokLive.mentionRoleId" data-source="roles"></select></label>
+          <label>Nachricht<textarea rows="3" data-path="tiktokLive.content"></textarea></label>
+          <label>Prüfintervall nach Offline/Fehler (Sek.)<input type="number" min="30" data-path="tiktokLive.reconnectSeconds"></label>
+          <label>Link-Button Text<input data-path="tiktokLive.buttonLabel"></label>
+          <label>Embed-Titel<input data-path="tiktokLive.embed.title"></label>
+          <label>Embed-Beschreibung<textarea rows="3" data-path="tiktokLive.embed.description"></textarea></label>
+          <button class="btn" data-action="tiktok-test">Test-Benachrichtigung senden</button>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Live-Vorschau</h3><p>Beispiel der Discord-Benachrichtigung.</p></div></div>
+          <div class="discord-embed">
+            <strong>🔴 Jetzt LIVE auf TikTok</strong>
+            <p>Komm in den Stream!</p>
+            <button class="fake-discord-button">TikTok öffnen</button>
+          </div>
+          <div class="notice">TikTok-Live-Connector ist ein inoffizieller Adapter. Der Bot behandelt Fehler und Reconnects automatisch; TikTok kann externe Schnittstellen dennoch ändern.</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="modstamp">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Mod-Stempel</h3><p>/stempel erstellt Termine direkt im aktuellen Discord-Kanal.</p></div></div>
+          <label>Rollen, die Stempel erstellen dürfen<select multiple size="6" data-path="modStamp.allowedRoleIds" data-source="roles"></select></label>
+          <label>Rollen, die abstimmen dürfen<select multiple size="6" data-path="modStamp.voteRoleIds" data-source="roles"></select></label>
+          <label>Erinnerungen in Minuten<input data-path="modStamp.reminderMinutes" data-kind="number-array"></label>
+          <label>Embed-Titel<input data-path="modStamp.embed.title"></label>
+          <label>Standardbeschreibung<textarea rows="3" data-path="modStamp.embed.description"></textarea></label>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Teilnahme-Vorschau</h3><p>Mods stimmen mit einem Klick ab.</p></div></div>
+          <div class="discord-embed">
+            <strong>🛡️ Mod-Besprechung</strong>
+            <p>📅 20.09.2026 · 20:00 Uhr</p>
+            <div class="stamp-cols"><span>✅ Dabei<br><small>Crazy_Batto</small></span><span>❓ Unsicher<br><small>—</small></span><span>❌ Nicht dabei<br><small>—</small></span></div>
+          </div>
+          <div class="fake-buttons"><button>✅ Dabei</button><button>❓ Unsicher</button><button>❌ Nicht dabei</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="streamplan">
+      <div class="card">
+        <div class="card-title">
+          <div><h3>Streamplan</h3><p>Wochentage, Uhrzeit, Plattform und Thema frei verwalten.</p></div>
+          <button class="btn" id="addStreamEntry">+ Termin</button>
+        </div>
+        <label class="switch-row"><span>Streamplan aktiv</span><input type="checkbox" data-path="streamPlan.enabled"></label>
+        <label>Streamplan-Kanal<select data-path="streamPlan.channelId" data-source="text-channels"></select></label>
+        <label>Embed-Titel<input data-path="streamPlan.embed.title"></label>
+        <div id="streamEntries" class="table-editor"></div>
+        <button class="btn primary" data-action="stream-publish">Streamplan veröffentlichen / aktualisieren</button>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="stats">
+      <div class="card">
+        <div class="card-title"><div><h3>Server Stats</h3><p>Discord-Kanalnamen werden automatisch aktualisiert.</p></div></div>
+        <label class="switch-row"><span>Server Stats aktiv</span><input type="checkbox" data-path="serverStats.enabled"></label>
+        <label>Aktualisierung alle Sekunden<input type="number" min="60" data-path="serverStats.intervalSeconds"></label>
+        <div id="statsEditor"></div>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="hangman">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>ʜᴀɴɢᴍᴀɴ</h3><p>Spielkanal und Wortlisten frei einstellen.</p></div></div>
+          <label class="switch-row"><span>Hangman aktiv</span><input type="checkbox" data-path="hangman.enabled"></label>
+          <label>Spielkanal<select data-path="hangman.channelId" data-source="text-channels"></select></label>
+          <label>Maximale Fehlversuche<input type="number" min="3" max="12" data-path="hangman.maxWrong"></label>
+          <label class="switch-row"><span>Gleicher Spieler darf mehrfach raten</span><input type="checkbox" data-path="hangman.allowSameUser"></label>
+          <label>Embed-Titel<input data-path="hangman.embed.title"></label>
+          <label>Wortlisten (JSON nach Kategorien)<textarea rows="12" id="hangmanWords"></textarea></label>
+        </article>
+        <article class="card">
+          <div class="discord-embed">
+            <strong>ʜᴀɴɢᴍᴀɴ</strong>
+            <p><b>Kategorie:</b> Allgemein</p>
+            <div class="hangman-word">_ _ S C O R D</div>
+            <p>Falsche Buchstaben: X, Y</p>
+          </div>
+          <p class="muted">Start über <code>/hangman start</code>. Danach können Mitglieder Buchstaben oder ganze Wörter in den konfigurierten Kanal schreiben.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="embeds">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Zentraler Embed-Editor</h3><p>Alle Einbettungen mit demselben Editor bis ins Detail konfigurieren.</p></div></div>
+          <label>Einbettung auswählen<select id="embedTarget"></select></label>
+          <label class="switch-row"><span>Einbettung aktiv</span><input id="embedEnabled" type="checkbox"></label>
+          <label>Titel<input id="embedTitle" maxlength="256"></label>
+          <label>Beschreibung<textarea id="embedDescription" rows="8"></textarea></label>
+          <label>Autor<input id="embedAuthor" maxlength="256"></label>
+          <label>Footer<input id="embedFooter" maxlength="2048"></label>
+          <div class="field-row">
+            <label>Großes Bild<select id="embedImageAsset"></select></label>
+            <label>Thumbnail<select id="embedThumbnailAsset"></select></label>
+          </div>
+          <label>Individuelle Akzentfarbe<input id="embedColor" type="color"></label>
+          <label class="switch-row"><span>Weißen Balken global erzwingen</span><input type="checkbox" data-path="branding.lockEmbedAccentWhite"></label>
+          <div class="notice">Ist der globale Schalter aktiv, wird Discord für jede Einbettung #FFFFFF übergeben. Dadurch bleibt der linke Balken weiß.</div>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Live-Vorschau</h3><p>Annäherung an die Darstellung in Discord.</p></div></div>
+          <div class="discord-message-preview">
+            <div class="avatar-mini">B</div>
+            <div>
+              <div><strong id="embedBotName">Kori</strong> <span class="app-tag">APP</span></div>
+              <div class="discord-embed" id="embedLivePreview">
+                <div id="embedPreviewAuthor" class="muted"></div>
+                <strong id="embedPreviewTitle">Einbettungs-Vorschau</strong>
+                <p id="embedPreviewDescription"></p>
+                <img id="embedPreviewImage" class="embed-preview-image hidden" alt="">
+                <small id="embedPreviewFooter"></small>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="media">
+      <div class="card">
+        <div class="card-title">
+          <div><h3>Medienbibliothek</h3><p>Keine fest eingebauten Kundenbilder. Alles kann hochgeladen und ersetzt werden.</p></div>
+          <label class="btn upload-inline">+ Bild hochladen<input id="generalUpload" type="file" accept="image/*"></label>
+        </div>
+        <div id="mediaGrid" class="media-grid"></div>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="backup">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Backup exportieren</h3><p>Konfiguration, Medien und laufende Modul-Daten als eine .koribackup-Datei.</p></div></div>
+          <label class="switch-row"><span>Automatische Backups</span><input type="checkbox" data-path="backup.automaticEnabled"></label>
+          <label>Intervall in Stunden<input type="number" min="1" max="168" data-path="backup.intervalHours"></label>
+          <label>Anzahl aufzubewahrender Backups<input type="number" min="1" max="90" data-path="backup.keepFiles"></label>
+          <button class="btn primary" id="exportBackup">Backup herunterladen</button>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Migration / Wiederherstellung</h3><p>Den getesteten Stand vom Windows-PC später auf den Windows Server übernehmen.</p></div></div>
+          <div class="notice">Beim Import werden Konfiguration, Medien und persistente Modul-Daten durch den Inhalt des Backups ersetzt.</div>
+          <label class="upload">.koribackup auswählen<input id="importBackupFile" type="file" accept=".koribackup,application/octet-stream"></label>
+          <button class="btn" id="importBackup">Backup importieren</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" data-page-content="diagnostics">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-title"><div><h3>Systemstatus</h3><p>Bot, Dashboard und Serverbindung.</p></div></div>
+          <pre id="diagnosticsStatus">Lade…</pre>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>Audit-Log</h3><p>Letzte Änderungen aus dem Dashboard.</p></div></div>
+          <div id="auditLog" class="audit-list"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/app.js" defer></script>
+</body>
+</html>

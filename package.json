@@ -1,0 +1,39 @@
+{
+  "name": "crazy-bot",
+  "version": "0.1.1-test",
+  "private": true,
+  "description": "Konfigurierbarer Discord-Bot mit deutschem Web-Dashboard für Windows und Windows Server.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/src/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start:local": "powershell -ExecutionPolicy Bypass -File ./scripts/start-local.ps1",
+    "service:install": "powershell -ExecutionPolicy Bypass -File ./scripts/install-service.ps1",
+    "service:remove": "powershell -ExecutionPolicy Bypass -File ./scripts/uninstall-service.ps1",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "discord.js": "14.27.0",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "multer": "2.4.0",
+    "node-windows": "1.0.0-beta.8",
+    "sharp": "0.35.4",
+    "tiktok-live-connector": "2.5.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
+    "@types/node": "26.6.2",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2"
+  }
+}

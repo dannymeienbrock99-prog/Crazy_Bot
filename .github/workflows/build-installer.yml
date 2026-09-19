@@ -1,0 +1,77 @@
+name: Windows Test Installer
+
+on:
+  push:
+    branches:
+      - "feature/kori-v1"
+    paths:
+      - "installer/**"
+      - "src/**"
+      - "web/**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/build-installer.yml"
+  workflow_dispatch:
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test and build bot
+        shell: pwsh
+        run: |
+          npm install
+          npm run typecheck
+          npm test
+          npm run build
+          node --check web\app.js
+
+      - name: Build silent Windows launcher
+        shell: pwsh
+        run: |
+          dotnet publish installer\launcher\CrazyBotLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o installer\launcher\publish
+
+      - name: Prepare portable application
+        shell: pwsh
+        run: |
+          npm prune --omit=dev
+          if (Test-Path installer\package) { Remove-Item installer\package -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path installer\package\runtime | Out-Null
+          New-Item -ItemType Directory -Force -Path installer\package\dist | Out-Null
+          New-Item -ItemType Directory -Force -Path installer\package\web | Out-Null
+
+          Copy-Item (Get-Command node).Source installer\package\runtime\node.exe
+          Copy-Item dist\* installer\package\dist -Recurse -Force
+          Copy-Item web\* installer\package\web -Recurse -Force
+          Copy-Item node_modules installer\package\node_modules -Recurse -Force
+          Copy-Item package.json installer\package\package.json
+          Copy-Item installer\launcher\publish\Crazy_Bot.exe installer\package\Crazy_Bot.exe
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build test Setup EXE
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" }
+          & $iscc installer\Crazy_Bot.iss
+
+      - name: Upload test installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crazy_Bot_Testversion_0.1.1
+          path: installer/output/Crazy_Bot_Test_Setup_0.1.1.exe
+          if-no-files-found: error
+          retention-days: 30
