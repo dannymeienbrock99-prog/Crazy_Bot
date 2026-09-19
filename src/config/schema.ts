@@ -37,8 +37,16 @@ const rolePanelSchema = withDefaults(z.object({
   name: z.string().max(100).default('Rollenpanel'),
   channelId: z.string().default(''),
   messageId: z.string().default(''),
-  title: z.string().max(256).default('Rollen auswählen'),
-  description: z.string().max(2000).default(''),
+  embed: withDefaults(z.object({
+    enabled: z.boolean().default(true),
+    title: z.string().max(256).default('Rollen auswählen'),
+    description: z.string().max(4096).default('Wähle deine Rollen aus.'),
+    author: z.string().max(256).default(''),
+    footer: z.string().max(2048).default(''),
+    imageAssetId: z.string().nullable().default(null),
+    thumbnailAssetId: z.string().nullable().default(null),
+    color: hexColor.default('#FFFFFF')
+  })),
   entries: z.array(rolePanelEntrySchema).max(25).default([])
 }));
 
@@ -160,6 +168,7 @@ const tiktokLiveSchema = withDefaults(z.object({
   mentionRoleId: z.string().default(''),
   content: z.string().max(2000).default('{mention} 🔴 **{creator} ist jetzt auf TikTok LIVE!**'),
   reconnectSeconds: z.number().int().min(30).max(1800).default(60),
+  buttonLabel: z.string().max(80).default('TikTok öffnen'),
   embed: withDefaults(z.object({
     enabled: z.boolean().default(true),
     title: z.string().max(256).default('🔴 Jetzt LIVE auf TikTok'),
