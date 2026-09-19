@@ -34,6 +34,106 @@ async function api(url,opts={}){
   return data;
 }
 
+
+function setSetupMessage(message,type=''){
+  const el=document.querySelector('#setupMessage');
+  if(!el)return;
+  el.textContent=message||'';
+  el.className='setup-message '+type;
+}
+
+function showDiscordSetup(force=false){
+  const overlay=document.querySelector('#setupOverlay');
+  if(!overlay||!state.status)return;
+  const shouldShow=force||!state.status.discordConfigured;
+  overlay.classList.toggle('hidden',!shouldShow);
+  if(shouldShow){
+    document.querySelector('#setupDiscordToken')?.focus();
+    setSetupMessage('');
+  }
+}
+
+async function waitForRestart(){
+  setSetupMessage('Crazy Bot wird neu gestartet und verbindet sich mit Discord …','good');
+  await new Promise(resolve=>setTimeout(resolve,1200));
+
+  for(let i=0;i<60;i++){
+    try{
+      const res=await fetch('/api/status',{headers:authHeaders(),cache:'no-store'});
+      if(res.ok){
+        const status=await res.json();
+        if(status.discordConfigured){
+          location.reload();
+          return;
+        }
+      }
+    }catch{}
+    await new Promise(resolve=>setTimeout(resolve,1000));
+  }
+
+  setSetupMessage('Der Neustart dauert länger als erwartet. Bitte Crazy Bot einmal neu starten.','bad');
+  document.querySelector('#saveDiscordSetup').disabled=false;
+}
+
+async function saveDiscordSetup(){
+  const input=document.querySelector('#setupDiscordToken');
+  const button=document.querySelector('#saveDiscordSetup');
+  const token=input?.value?.trim()||'';
+
+  if(token.length<30){
+    setSetupMessage('Bitte einen vollständigen Discord Bot Token einfügen.','bad');
+    return;
+  }
+
+  button.disabled=true;
+  setSetupMessage('Token wird lokal gespeichert …');
+
+  try{
+    await api('/api/setup/discord',{method:'POST',body:JSON.stringify({token})});
+    input.value='';
+    await waitForRestart();
+  }catch(e){
+    button.disabled=false;
+    setSetupMessage(e.message,'bad');
+  }
+}
+
+function updateDiscordSetupCard(){
+  const card=document.querySelector('#discordSetupCard');
+  if(!card||!state.status)return;
+
+  const invite=document.querySelector('#inviteBotButton');
+  const title=document.querySelector('#discordSetupTitle');
+  const text=document.querySelector('#discordSetupText');
+
+  if(!state.status.discord){
+    card.classList.remove('hidden');
+    title.textContent=state.status.discordConfigured?'Discord-Verbindung prüfen':'Discord verbinden';
+    text.textContent=state.status.discordConfigured
+      ? 'Der gespeicherte Bot konnte sich nicht mit Discord verbinden. Du kannst den Token hier neu setzen.'
+      : 'Crazy Bot benötigt einmalig den Discord Bot Token.';
+    invite.classList.add('hidden');
+    invite.removeAttribute('href');
+    return;
+  }
+
+  if(state.status.guilds===0){
+    card.classList.remove('hidden');
+    title.textContent='Bot zu deinem Discord-Server hinzufügen';
+    text.textContent='Crazy Bot ist erfolgreich mit Discord verbunden. Jetzt fehlt nur noch der Server.';
+    if(state.status.inviteUrl){
+      invite.href=state.status.inviteUrl;
+      invite.classList.remove('hidden');
+    }else{
+      invite.classList.add('hidden');
+    }
+    return;
+  }
+
+  card.classList.add('hidden');
+}
+
+
 function showPage(name){
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.dataset.pageContent===name));
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.page===name));
@@ -96,6 +196,8 @@ function updateOverview(){
     document.querySelector('#sideStatus').textContent=s.discord?'Discord verbunden':'Discord offline';
     document.querySelector('#sideStatusDot').className='dot '+(s.discord?'good':'bad');
     document.querySelector('#diagnosticsStatus').textContent=JSON.stringify(s,null,2);
+    updateDiscordSetupCard();
+    showDiscordSetup(false);
   }
 }
 
@@ -340,7 +442,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
   document.querySelector('#addRolePanel').onclick=()=>{state.config.roles.panels.push({id:crypto.randomUUID(),name:'Neues Rollenpanel',channelId:'',messageId:'',embed:{enabled:true,title:'Rollen auswählen',description:'Wähle deine Rollen aus.',author:'',footer:'',imageAssetId:null,thumbnailAssetId:null,color:'#FFFFFF'},entries:[]});renderRolePanels();renderEmbedEditor();markDirty()};
   document.querySelector('#addStreamEntry').onclick=()=>{state.config.streamPlan.entries.push({id:crypto.randomUUID(),day:'Montag',time:'20:00',title:'Stream',platform:'TikTok',note:''});renderStreamEntries();markDirty()};
-  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};\n  document.querySelector('#embedTarget').onchange=()=>renderEmbedEditor();
+  document.querySelector('#generalUpload').onchange=async e=>{e.target.dataset.uploadKind='general';await uploadFile(e.target)};
+  document.querySelector('#saveDiscordSetup').onclick=saveDiscordSetup;
+  document.querySelector('#repairDiscordButton').onclick=()=>showDiscordSetup(true);
+  document.querySelector('#toggleSetupToken').onclick=()=>{
+    const input=document.querySelector('#setupDiscordToken');
+    const button=document.querySelector('#toggleSetupToken');
+    const visible=input.type==='text';
+    input.type=visible?'password':'text';
+    button.textContent=visible?'Anzeigen':'Verbergen';
+  };
+  document.querySelector('#setupDiscordToken').addEventListener('keydown',e=>{if(e.key==='Enter')saveDiscordSetup()});\n  document.querySelector('#embedTarget').onchange=()=>renderEmbedEditor();
   document.querySelector('#embedEnabled').onchange=e=>updateCurrentEmbed('enabled',e.target.checked);
   document.querySelector('#embedTitle').oninput=e=>updateCurrentEmbed('title',e.target.value);
   document.querySelector('#embedDescription').oninput=e=>updateCurrentEmbed('description',e.target.value);
